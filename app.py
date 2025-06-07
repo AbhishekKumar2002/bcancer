@@ -2,21 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import numpy as np
-import pickle
+import joblib
 import os
 
-# Load the pickle model
-MODEL_PATH = "cancer_model_render.pkl"
+# Load the model
+MODEL_PATH = "cancer_model.joblib"
 
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("Model file not found. Please upload 'cancer_model.pkl' to the 'model' folder.")
+    raise FileNotFoundError(f"Model file '{MODEL_PATH}' not found.")
 
-with open(MODEL_PATH, "rb") as f:
-    model = pickle.load(f)
+model = joblib.load(MODEL_PATH)
 
 app = FastAPI()
 
-# Enable CORS
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
