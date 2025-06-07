@@ -6,7 +6,7 @@ import pickle
 import os
 
 # Load the pickle model
-MODEL_PATH = "cancer_model1.pkl"
+MODEL_PATH = "cancer_model_v1.7.pkl"
 
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError("Model file not found. Please upload 'cancer_model.pkl' to the 'model' folder.")
