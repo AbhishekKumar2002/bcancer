@@ -1,36 +1,43 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import joblib
 import numpy as np
+import pickle
 import os
 
-# Define path to model
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "cancer_model1.joblib")
+# Load the pickle model
+MODEL_PATH = "cancer_model.pkl"
 
-# Load the model
-try:
-    model = joblib.load(MODEL_PATH)
-except Exception as e:
-    raise RuntimeError(f"Failed to load model: {e}")
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError("Model file not found. Please upload 'cancer_model.pkl' to the 'model' folder.")
 
-# Create the FastAPI app
+with open(MODEL_PATH, "rb") as f:
+    model = pickle.load(f)
+
 app = FastAPI()
 
-# Define input schema
-class CancerInput(BaseModel):
-    features: list[float]  # Expecting a list of 30 feature values
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Define prediction route
+class InputData(BaseModel):
+    features: list
+
+@app.get("/")
+def read_root():
+    return {"message": "Breast Cancer Prediction API is running."}
+
 @app.post("/predict")
-def predict(input_data: CancerInput):
-    features = np.array(input_data.features).reshape(1, -1)
-
-    if features.shape[1] != 30:
-        raise HTTPException(status_code=400, detail="Exactly 30 features are required.")
-
+def predict(data: InputData):
     try:
-        prediction = model.predict(features)[0]
-        result = "Malignant" if prediction == 0 else "Benign"
-        return {"prediction": int(prediction), "result": result}
+        input_array = np.array([data.features], dtype=float)
+        prediction = int(model.predict(input_array)[0])
+        probability = model.predict_proba(input_array)[0].tolist()
+        return {"prediction": prediction, "probability": probability}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
+        return {"error": str(e)}
