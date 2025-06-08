@@ -6,18 +6,19 @@ import numpy as np
 import pickle
 import os
 
-app = FastAPI(title="Breast Cancer Predictor")
+# Define the app
+app = FastAPI(title="Breast Cancer Prediction API")
 
-# Enable CORS for frontend access
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend domain
+    allow_origins=["*"],  # You can restrict this to your domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Pydantic input model
+# Define input schema
 class InputData(BaseModel):
     features: List[float]
 
@@ -28,31 +29,29 @@ class InputData(BaseModel):
             }
         }
 
-# Load model
+# Load the model once at startup
 MODEL_PATH = "cancer_model.pkl"
 
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("❌ Model file 'cancer_model.pkl' not found in working directory.")
+    raise FileNotFoundError("❌ Model file 'cancer_model.pkl' not found.")
 
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
 
-# Routes
+# Root route
 @app.get("/")
 def read_root():
-    return {"message": "✅ Breast Cancer Prediction API is live."}
+    return {"message": "API is up and running 🎉"}
 
+# Prediction route
 @app.post("/predict")
 def predict(data: InputData):
     try:
         input_array = np.array([data.features], dtype=float)
-        print("📥 Received input:", input_array)
+        print("📥 Received:", input_array)
 
         prediction = int(model.predict(input_array)[0])
         probability = model.predict_proba(input_array)[0].tolist()
-
-        print("✅ Prediction:", prediction)
-        print("📊 Probabilities:", probability)
 
         return {
             "prediction": prediction,
@@ -60,5 +59,5 @@ def predict(data: InputData):
         }
 
     except Exception as e:
-        print("❌ Error during prediction:", str(e))
+        print("❌ Error:", str(e))
         return {"error": str(e)}
