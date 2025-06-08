@@ -6,19 +6,18 @@ import numpy as np
 import pickle
 import os
 
-# Define the app
-app = FastAPI(title="Breast Cancer Prediction API")
+app = FastAPI(title="Breast Cancer Predictor")
 
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this to your domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Define input schema
+# Input schema
 class InputData(BaseModel):
     features: List[float]
 
@@ -29,35 +28,37 @@ class InputData(BaseModel):
             }
         }
 
-# Load the model once at startup
+# ✅ Use a safe, non-conflicting name for the model
 MODEL_PATH = "cancer_model.pkl"
 
 if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError("❌ Model file 'cancer_model.pkl' not found.")
+    raise FileNotFoundError("Model file 'cancer_model.pkl' not found in project directory.")
 
 with open(MODEL_PATH, "rb") as f:
-    model = pickle.load(f)
+    breast_cancer_model = pickle.load(f)
 
-# Root route
+print("✅ Loaded model of type:", type(breast_cancer_model))
+
 @app.get("/")
-def read_root():
-    return {"message": "API is up and running 🎉"}
+def root():
+    return {"message": "✅ Breast Cancer Predictor is up!"}
 
-# Prediction route
 @app.post("/predict")
 def predict(data: InputData):
     try:
         input_array = np.array([data.features], dtype=float)
-        print("📥 Received:", input_array)
+        print("📥 Features received:", input_array)
+        print("🔎 Model type:", type(breast_cancer_model))
 
-        prediction = int(model.predict(input_array)[0])
-        probability = model.predict_proba(input_array)[0].tolist()
+        prediction = int(breast_cancer_model.predict(input_array)[0])
+        probability = breast_cancer_model.predict_proba(input_array)[0].tolist()
 
+        print("✅ Prediction:", prediction)
         return {
             "prediction": prediction,
             "probability": probability
         }
 
     except Exception as e:
-        print("❌ Error:", str(e))
+        print("❌ Error occurred:", e)
         return {"error": str(e)}
