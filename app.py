@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import numpy as np
 import pickle
 import os
+from typing import List
 
 # Load the pickle model
 MODEL_PATH = "cancer_model.pkl"
@@ -26,7 +27,7 @@ app.add_middleware(
 )
 
 class InputData(BaseModel):
-    features: list
+    features: List[float]
 
 @app.get("/")
 def read_root():
